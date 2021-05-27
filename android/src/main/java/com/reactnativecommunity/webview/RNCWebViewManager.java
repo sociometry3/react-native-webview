@@ -307,6 +307,7 @@ public class RNCWebViewManager extends SimpleViewManager<WebView> {
 
   @ReactProp(name = "androidLayerType")
   public void setLayerType(WebView view, String layerTypeString) {
+    view.setFocusable(false);
     int layerType = View.LAYER_TYPE_NONE;
     switch (layerTypeString) {
         case "hardware":
