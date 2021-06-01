@@ -320,6 +320,10 @@ public class RNCWebViewManager extends SimpleViewManager<WebView> {
     view.setLayerType(layerType, null);
   }
 
+  @ReactProp(name = "initialScale")
+  public void setInitialScale(WebView view, Integer initialScale) {
+    view.setInitialScale(initialScale);
+  }
 
   @ReactProp(name = "overScrollMode")
   public void setOverScrollMode(WebView view, String overScrollModeString) {

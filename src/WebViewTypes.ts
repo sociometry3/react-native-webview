@@ -824,6 +824,12 @@ export interface AndroidWebViewProps extends WebViewSharedProps {
   scalesPageToFit?: boolean;
 
   /**
+   * android native setInitialScale
+   * @platform android
+   */
+  initialScale?:number;
+
+  /**
    * Sets whether Geolocation is enabled. The default is false.
    * @platform android
    */
