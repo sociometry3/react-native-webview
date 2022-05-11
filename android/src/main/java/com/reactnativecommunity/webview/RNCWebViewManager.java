@@ -855,6 +855,7 @@ public class RNCWebViewManager extends SimpleViewManager<WebView> {
               outputStream.write(buffer, 0, read);
             }
             outputStream.flush();
+            inputStream = new FileInputStream(file);
           }
           WebResourceResponse response = null;
           if (url.contains(".js")) {
