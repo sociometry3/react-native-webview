@@ -82,9 +82,15 @@ import com.reactnativecommunity.webview.events.TopRenderProcessGoneEvent;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.net.URLConnection;
 import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -488,11 +494,14 @@ public class RNCWebViewManager extends SimpleViewManager<WebView> {
       if (source.hasKey("html")) {
         String html = source.getString("html");
         String baseUrl = source.hasKey("baseUrl") ? source.getString("baseUrl") : "";
+        ((RNCWebView) view).baseUrl = baseUrl;
         view.loadDataWithBaseURL(baseUrl, html, HTML_MIME_TYPE, HTML_ENCODING, null);
         return;
       }
       if (source.hasKey("uri")) {
         String url = source.getString("uri");
+        String baseUrl = source.hasKey("baseUrl") ? source.getString("baseUrl") : "";
+        ((RNCWebView) view).baseUrl = baseUrl;
         String previousUrl = view.getUrl();
         if (previousUrl != null && previousUrl.equals(url)) {
           return;
@@ -813,6 +822,72 @@ public class RNCWebViewManager extends SimpleViewManager<WebView> {
 
     public void setIgnoreErrFailedForThisURL(@Nullable String url) {
       ignoreErrFailedForThisURL = url;
+    }
+
+    private WebResourceResponse proxyResource(String key, WebView view, WebResourceRequest request) {
+      InputStream inputStream = null;
+
+      String url = request.getUrl().toString();
+
+      if (url.contains(key)) {
+        String path = "data/data/com.wyntv/" + url.replace(key, "");
+        try {
+          String[] tmp = path.split("/");
+          File file = new File(path.trim());
+          String dirPath = "/";
+          for (int i = 0; i < tmp.length -1; i++) {
+            dirPath = dirPath + tmp[i] + "/";
+          }
+          File dir = new File(dirPath);
+          if (file.exists()){
+            inputStream = new FileInputStream(file);
+          } else {
+            dir.mkdirs();
+            file.createNewFile();
+            URL url1 = new URL(url);
+            URLConnection connection = url1.openConnection();
+            connection.connect();
+            inputStream = connection.getInputStream();
+            OutputStream outputStream = new FileOutputStream(file);
+            byte[] buffer = new byte[8 * 1024];
+            int read;
+            while ((read = inputStream.read(buffer)) != -1) {
+              outputStream.write(buffer, 0, read);
+            }
+            outputStream.flush();
+          }
+          WebResourceResponse response = null;
+          if (url.contains(".js")) {
+            response = new WebResourceResponse("text/javascript", "UTF-8", inputStream);
+          } else if (url.contains(".css")) {
+            response = new WebResourceResponse("text/css", "UTF-8", inputStream);
+          }
+
+          return response;
+        } catch (Exception e) {
+          e.printStackTrace();
+        } finally {
+        }
+      }
+      return null;
+    }
+
+    @Nullable
+    @Override
+    public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
+
+      String baseUrl = ((RNCWebView) view).baseUrl;
+
+      WebResourceResponse response;
+      response = this.proxyResource(baseUrl + "/api/PluginAssets", view, request);
+      if (response != null) {
+        return response;
+      }
+      response = this.proxyResource(baseUrl + "/api/themefiles", view, request);
+      if (response != null) {
+        return response;
+      }
+      return super.shouldInterceptRequest(view, request);
     }
 
     @Override
@@ -1238,6 +1313,7 @@ public class RNCWebViewManager extends SimpleViewManager<WebView> {
    * to call {@link WebView#destroy} on activity destroy event and also to clear the client
    */
   protected static class RNCWebView extends WebView implements LifecycleEventListener {
+    public String baseUrl = "";
     protected @Nullable
     String injectedJS;
     protected @Nullable
