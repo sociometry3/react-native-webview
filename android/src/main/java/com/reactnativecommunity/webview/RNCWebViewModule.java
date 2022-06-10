@@ -21,6 +21,7 @@ import androidx.core.util.Pair;
 import android.util.Log;
 import android.webkit.MimeTypeMap;
 // import android.webkit.ValueCallback;
+import com.tencent.smtt.sdk.TbsListener;
 import com.tencent.smtt.sdk.ValueCallback;
 // import android.webkit.WebChromeClient;
 import com.tencent.smtt.sdk.WebChromeClient;
@@ -123,6 +124,24 @@ public class RNCWebViewModule extends ReactContextBaseJavaModule implements Acti
   public RNCWebViewModule(ReactApplicationContext reactContext) {
     super(reactContext);
     QbSdk.setDownloadWithoutWifi(true);
+    QbSdk.setTbsListener(
+      new TbsListener() {
+        @Override
+        public void onDownloadFinish(int i) {
+          Log.d("QbSdk", "----------------------------------------------------isX5 -->下载X5内核完成：" + i);
+        }
+
+        @Override
+        public void onInstallFinish(int i) {
+          Log.d("QbSdk", "----------------------------------------------------isX5 -->安装X5内核进度：" + i);
+        }
+
+        @Override
+        public void onDownloadProgress(int i) {
+          Log.d("QbSdk", "----------------------------------------------------isX5 -->下载X5内核进度：" + i);
+        }
+      });
+
     QbSdk.initX5Environment(reactContext, new QbSdk.PreInitCallback() {
       @Override
       public void onCoreInitFinished() {
