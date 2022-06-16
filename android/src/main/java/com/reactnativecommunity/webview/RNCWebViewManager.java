@@ -961,7 +961,9 @@ public class RNCWebViewManager extends SimpleViewManager<WebView> {
           if (file.exists()){
             inputStream = new FileInputStream(file);
           } else {
-            dir.mkdirs();
+            if (!dir.exists()) {
+              dir.mkdirs();
+            }
             file.createNewFile();
             URL url1 = new URL(url);
             URLConnection connection = url1.openConnection();
