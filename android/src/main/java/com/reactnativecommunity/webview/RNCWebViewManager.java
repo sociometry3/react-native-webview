@@ -10,8 +10,7 @@ import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.Manifest;
-// import android.net.http.SslError;
-import com.tencent.smtt.export.external.interfaces.SslError;
+import android.net.http.SslError;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Environment;
@@ -25,45 +24,29 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewGroup.LayoutParams;
 import android.view.WindowManager;
-// import android.webkit.ConsoleMessage;
-import com.tencent.smtt.export.external.interfaces.ConsoleMessage;
-// import android.webkit.CookieManager;
-import com.tencent.smtt.sdk.CookieManager;
-// import android.webkit.DownloadListener;
-import com.tencent.smtt.sdk.DownloadListener;
-// import android.webkit.GeolocationPermissions;
-import com.tencent.smtt.export.external.interfaces.GeolocationPermissionsCallback;
-// import android.webkit.HttpAuthHandler;
-import com.tencent.smtt.export.external.interfaces.HttpAuthHandler;
+import android.webkit.ConsoleMessage;
+import android.webkit.CookieManager;
+import android.webkit.DownloadListener;
+import android.webkit.GeolocationPermissions;
+import android.webkit.HttpAuthHandler;
 import android.webkit.JavascriptInterface;
 import android.webkit.RenderProcessGoneDetail;
-// import android.webkit.SslErrorHandler;
-import com.tencent.smtt.export.external.interfaces.SslErrorHandler;
-//import android.webkit.PermissionRequest;
-import com.tencent.smtt.export.external.interfaces.PermissionRequest;
+import android.webkit.SslErrorHandler;
+import android.webkit.PermissionRequest;
 import android.webkit.URLUtil;
-// import android.webkit.ValueCallback;
-import com.tencent.smtt.sdk.ValueCallback;
-// import android.webkit.WebChromeClient;
-import com.tencent.smtt.sdk.WebChromeClient;
-// import android.webkit.WebResourceRequest;
-import com.tencent.smtt.export.external.interfaces.WebResourceRequest;
-// import android.webkit.WebResourceResponse;
-import com.tencent.smtt.export.external.interfaces.WebResourceResponse;
-// import android.webkit.WebSettings;
-import com.tencent.smtt.sdk.WebSettings;
-// import android.webkit.WebView;
-import com.tencent.smtt.sdk.WebView;
-// import android.webkit.WebViewClient;
-import com.tencent.smtt.sdk.WebViewClient;
-import com.tencent.smtt.export.external.interfaces.IX5WebChromeClient.CustomViewCallback;
+import android.webkit.ValueCallback;
+import android.webkit.WebChromeClient;
+import android.webkit.WebResourceRequest;
+import android.webkit.WebResourceResponse;
+import android.webkit.WebSettings;
+import android.webkit.WebView;
+import android.webkit.WebViewClient;
 import android.widget.FrameLayout;
 
 import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.core.content.ContextCompat;
 import androidx.core.util.Pair;
-//import com.tencent.smtt.export.external.interfaces
 import androidx.webkit.WebSettingsCompat;
 import androidx.webkit.WebViewFeature;
 
@@ -639,11 +622,11 @@ public class RNCWebViewManager extends SimpleViewManager<WebView> {
   public void setMixedContentMode(WebView view, @Nullable String mixedContentMode) {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
       if (mixedContentMode == null || "never".equals(mixedContentMode)) {
-        view.getSettings().setMixedContentMode(1);
+        view.getSettings().setMixedContentMode(WebSettings.MIXED_CONTENT_NEVER_ALLOW);
       } else if ("always".equals(mixedContentMode)) {
-        view.getSettings().setMixedContentMode(0);
+        view.getSettings().setMixedContentMode(WebSettings.MIXED_CONTENT_ALWAYS_ALLOW);
       } else if ("compatibility".equals(mixedContentMode)) {
-        view.getSettings().setMixedContentMode(2);
+        view.getSettings().setMixedContentMode(WebSettings.MIXED_CONTENT_COMPATIBILITY_MODE);
       }
     }
   }
@@ -688,22 +671,22 @@ public class RNCWebViewManager extends SimpleViewManager<WebView> {
   @ReactProp(name = "forceDarkOn")
   public void setForceDarkOn(WebView view, boolean enabled) {
     // Only Android 10+ support dark mode
-//    if (Build.VERSION.SDK_INT > Build.VERSION_CODES.P) {
-//      // Switch WebView dark mode
-//      if (WebViewFeature.isFeatureSupported(WebViewFeature.FORCE_DARK)) {
-//        int forceDarkMode = enabled ? WebSettingsCompat.FORCE_DARK_ON : WebSettingsCompat.FORCE_DARK_OFF;
-//        WebSettingsCompat.setForceDark(view.getSettings(), forceDarkMode);
-//      }
-//
-//      // Set how WebView content should be darkened.
-//      // PREFER_WEB_THEME_OVER_USER_AGENT_DARKENING:  checks for the "color-scheme" <meta> tag.
-//      // If present, it uses media queries. If absent, it applies user-agent (automatic)
-//      // More information about Force Dark Strategy can be found here:
-//      // https://developer.android.com/reference/androidx/webkit/WebSettingsCompat#setForceDarkStrategy(android.webkit.WebSettings)
-//      if (enabled && WebViewFeature.isFeatureSupported(WebViewFeature.FORCE_DARK_STRATEGY)) {
-//        WebSettingsCompat.setForceDarkStrategy(view.getSettings(), WebSettingsCompat.DARK_STRATEGY_PREFER_WEB_THEME_OVER_USER_AGENT_DARKENING);
-//      }
-//    }
+    if (Build.VERSION.SDK_INT > Build.VERSION_CODES.P) {
+      // Switch WebView dark mode
+      if (WebViewFeature.isFeatureSupported(WebViewFeature.FORCE_DARK)) {
+        int forceDarkMode = enabled ? WebSettingsCompat.FORCE_DARK_ON : WebSettingsCompat.FORCE_DARK_OFF;
+        WebSettingsCompat.setForceDark(view.getSettings(), forceDarkMode);
+      }
+
+      // Set how WebView content should be darkened.
+      // PREFER_WEB_THEME_OVER_USER_AGENT_DARKENING:  checks for the "color-scheme" <meta> tag.
+      // If present, it uses media queries. If absent, it applies user-agent (automatic)
+      // More information about Force Dark Strategy can be found here:
+      // https://developer.android.com/reference/androidx/webkit/WebSettingsCompat#setForceDarkStrategy(android.webkit.WebSettings)
+      if (enabled && WebViewFeature.isFeatureSupported(WebViewFeature.FORCE_DARK_STRATEGY)) {
+        WebSettingsCompat.setForceDarkStrategy(view.getSettings(), WebSettingsCompat.DARK_STRATEGY_PREFER_WEB_THEME_OVER_USER_AGENT_DARKENING);
+      }
+    }
   }
 
   @ReactProp(name = "minimumFontSize")
@@ -1131,22 +1114,22 @@ public class RNCWebViewManager extends SimpleViewManager<WebView> {
 
         // https://developer.android.com/reference/android/net/http/SslError.html
         switch (code) {
-          case android.net.http.SslError.SSL_DATE_INVALID:
+          case SslError.SSL_DATE_INVALID:
             description = "The date of the certificate is invalid";
             break;
-          case android.net.http.SslError.SSL_EXPIRED:
+          case SslError.SSL_EXPIRED:
             description = "The certificate has expired";
             break;
-          case android.net.http.SslError.SSL_IDMISMATCH:
+          case SslError.SSL_IDMISMATCH:
             description = "Hostname mismatch";
             break;
-          case android.net.http.SslError.SSL_INVALID:
+          case SslError.SSL_INVALID:
             description = "A generic error occurred";
             break;
-          case android.net.http.SslError.SSL_NOTYETVALID:
+          case SslError.SSL_NOTYETVALID:
             description = "The certificate is not yet valid";
             break;
-          case android.net.http.SslError.SSL_UNTRUSTED:
+          case SslError.SSL_UNTRUSTED:
             description = "The certificate authority is not trusted";
             break;
           default:
@@ -1304,7 +1287,7 @@ public class RNCWebViewManager extends SimpleViewManager<WebView> {
     protected View mWebView;
 
     protected View mVideoView;
-    protected CustomViewCallback mCustomViewCallback;
+    protected WebChromeClient.CustomViewCallback mCustomViewCallback;
 
     /*
      * - Permissions -
@@ -1318,7 +1301,7 @@ public class RNCWebViewManager extends SimpleViewManager<WebView> {
     protected List<String> grantedPermissions;
 
     // Webview geolocation permission callback
-    protected GeolocationPermissionsCallback geolocationPermissionCallback;
+    protected GeolocationPermissions.Callback geolocationPermissionCallback;
     // Webview geolocation permission origin callback
     protected String geolocationPermissionOrigin;
 
@@ -1419,7 +1402,7 @@ public class RNCWebViewManager extends SimpleViewManager<WebView> {
 
 
     @Override
-    public void onGeolocationPermissionsShowPrompt(String origin, GeolocationPermissionsCallback callback) {
+    public void onGeolocationPermissionsShowPrompt(String origin, GeolocationPermissions.Callback callback) {
 
       if (ContextCompat.checkSelfPermission(mReactContext, Manifest.permission.ACCESS_FINE_LOCATION)
         != PackageManager.PERMISSION_GRANTED) {
@@ -1550,7 +1533,7 @@ public class RNCWebViewManager extends SimpleViewManager<WebView> {
       getModule(mReactContext).startPhotoPickerIntent(filePathCallback, "");
     }
 
-    public void openFileChooser(ValueCallback<Uri> filePathCallback, String acceptType, String capture) {
+    protected void openFileChooser(ValueCallback<Uri> filePathCallback, String acceptType, String capture) {
       getModule(mReactContext).startPhotoPickerIntent(filePathCallback, acceptType);
     }
 
