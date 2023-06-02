@@ -15,6 +15,7 @@ _This guide is currently a work in progress._
 - [Add support for File Download](Guide.md#add-support-for-file-download)
 - [Communicating between JS and Native](Guide.md#communicating-between-js-and-native)
 - [Working with custom headers, sessions, and cookies](Guide.md#working-with-custom-headers-sessions-and-cookies)
+- [Page navigation gesture and button support](Guide.md#page-navigation-gesture-and-button-support)
 
 ### Basic inline HTML
 
@@ -216,6 +217,14 @@ WebView.isFileUploadSupported().then(res => {
 
 ```
 
+##### MacOS
+
+Add read access for `User Selected File` in `Signing & Capabilities` tab under `App Sandbox`:
+
+<img width="856" alt="settings screenshot" src="https://user-images.githubusercontent.com/36531255/200541359-dde130d0-169e-4b58-8b2f-205442d76fdd.png">
+
+Note: Attempting to open a file input without this permission will crash the webview.
+
 ### Multiple Files Upload
 
 You can control **single** or **multiple** file selection by specifing the [`multiple`](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/input/file#multiple) attribute on your `input` element:
@@ -356,6 +365,9 @@ export default class App extends Component {
 
 This runs the JavaScript in the `runFirst` string before the page is loaded. In this case, the value of `window.isNativeApp` will be set to true before the web code executes.
 
+> **Warning**
+> On Android, this may work, but it is not 100% reliable (see [#1609](https://github.com/react-native-webview/react-native-webview/issues/1609) and [#1099](https://github.com/react-native-webview/react-native-webview/pull/1099)).
+
 By setting `injectedJavaScriptBeforeContentLoadedForMainFrameOnly: false`, the JavaScript injection will occur on all frames (not just the top frame) if supported for the given platform. However, although support for `injectedJavaScriptBeforeContentLoadedForMainFrameOnly: false` has been implemented for iOS and macOS, [it is not clear](https://github.com/react-native-webview/react-native-webview/pull/1119#issuecomment-600275750) that it is actually possible to inject JS into iframes at this point in the page lifecycle, and so relying on the expected behaviour of this prop when set to `false` is not recommended.
 
 > On iOS, ~~`injectedJavaScriptBeforeContentLoaded` runs a method on WebView called `evaluateJavaScript:completionHandler:`~~ – this is no longer true as of version `8.2.0`. Instead, we use a `WKUserScript` with injection time `WKUserScriptInjectionTimeAtDocumentStart`. As a consequence, `injectedJavaScriptBeforeContentLoaded` no longer returns an evaluation value nor logs a warning to the console. In the unlikely event that your app depended upon this behaviour, please see migration steps [here](https://github.com/react-native-webview/react-native-webview/pull/1119#issuecomment-574919464) to retain equivalent behaviour.
@@ -470,7 +482,7 @@ In React Native WebView, you can set a custom header like this:
 
 This will set the header on the first load, but not on subsequent page navigations.
 
-In order to work around this, you can track the current URL, intercept new page loads, and navigate to them yourself ([original credit for this technique to Chirag Shah from Big Binary](https://blog.bigbinary.com/2016/07/26/passing-request-headers-on-each-webview-request-in-react-native.html)):
+In order to work around this, you can track the current URL, intercept new page loads, and navigate to them yourself ([original credit for this technique to Chirag Shah from Big Binary](https://www.bigbinary.com/blog/passing-request-headers-on-each-webview-request-in-react-native)):
 
 ```jsx
 const CustomHeaderWebView = (props) => {
@@ -539,6 +551,52 @@ const App = () => {
 ```
 
 Note that these cookies will only be sent on the first request unless you use the technique above for [setting custom headers on each page load](#Setting-Custom-Headers).
+
+### Page navigation gesture and button support
+We can provide support for conventional mobile page navigation: forward/back swipe gestures on iOS and the hardware back button/gesture on Android.
+
+For iOS, you'll just need to use the [`allowsbackforwardnavigationgestures`](Reference.md#allowsbackforwardnavigationgestures) prop.
+
+For Android, you need to use `BackHandler.addEventListener` and hook that up to call `goBack` on the `WebView`.
+
+With functional React components, you can use `useRef` and `useEffect` (you'll need to import them from React if you aren't already) to allow users to navigate to the previous page when they press the back button like so:
+```jsx
+import React, {
+    useEffect,
+    useRef,
+} from 'react';
+import {
+    BackHandler,
+    Platform,
+} from 'react-native';
+```
+
+```jsx
+const webViewRef = useRef(null);
+const onAndroidBackPress = () => {
+  if (webViewRef.current) {
+    webViewRef.current.goBack();
+    return true; // prevent default behavior (exit app)
+  }
+  return false;
+};
+
+useEffect(() => {
+  if (Platform.OS === 'android') {
+    BackHandler.addEventListener('hardwareBackPress', onAndroidBackPress);
+    return () => {
+      BackHandler.removeEventListener('hardwareBackPress', onAndroidBackPress);
+    };
+  }
+}, []);
+```
+
+And add this prop to your `WebView` component:
+```jsx
+<WebView
+  ref={webViewRef}
+/>
+```
 
 ### Hardware Silence Switch
 
