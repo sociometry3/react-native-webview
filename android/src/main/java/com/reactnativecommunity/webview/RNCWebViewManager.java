@@ -43,6 +43,7 @@ import com.tencent.smtt.export.external.interfaces.SslErrorHandler;
 import com.tencent.smtt.export.external.interfaces.PermissionRequest;
 import android.webkit.URLUtil;
 // import android.webkit.ValueCallback;
+import com.tencent.smtt.sdk.QbSdk;
 import com.tencent.smtt.sdk.ValueCallback;
 // import android.webkit.WebChromeClient;
 import com.tencent.smtt.sdk.WebChromeClient;
@@ -610,6 +611,8 @@ public class RNCWebViewManager extends SimpleViewManager<WebView> {
             }
           }
         }
+        String ua = view.getSettings().getUserAgentString();
+        view.getSettings().setUserAgentString(ua + " TBS/" + QbSdk.getTbsVersion(view.getContext()));
         view.loadUrl(url, headerMap);
         return;
       }
@@ -961,9 +964,7 @@ public class RNCWebViewManager extends SimpleViewManager<WebView> {
           if (file.exists()){
             inputStream = new FileInputStream(file);
           } else {
-            if (!dir.exists()) {
-              dir.mkdirs();
-            }
+            dir.mkdirs();
             file.createNewFile();
             URL url1 = new URL(url);
             URLConnection connection = url1.openConnection();
