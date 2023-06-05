@@ -11,17 +11,18 @@ import android.util.Log
 import android.view.View
 import android.view.ViewGroup
 import android.view.WindowManager
-import android.webkit.CookieManager
-import android.webkit.DownloadListener
-import android.webkit.WebSettings
-import android.webkit.WebView
 import androidx.webkit.WebSettingsCompat
+import com.tencent.smtt.sdk.CookieManager
+import com.tencent.smtt.sdk.DownloadListener
+import com.tencent.smtt.sdk.WebSettings
+import com.tencent.smtt.sdk.WebView
 import androidx.webkit.WebViewFeature
 import com.facebook.react.bridge.ReadableArray
 import com.facebook.react.bridge.ReadableMap
 import com.facebook.react.common.MapBuilder
 import com.facebook.react.common.build.ReactBuildConfig
 import com.facebook.react.uimanager.ThemedReactContext
+import com.tencent.smtt.export.external.interfaces.IX5WebChromeClient
 import org.json.JSONException
 import org.json.JSONObject
 import java.io.UnsupportedEncodingException
@@ -78,7 +79,7 @@ class RNCWebViewManagerImpl {
         settings.setSupportMultipleWindows(true)
         settings.allowFileAccess = false
         settings.allowContentAccess = false
-        settings.allowFileAccessFromFileURLs = false
+//        settings.allowFileAccessFromFileURLs = false
         setAllowUniversalAccessFromFileURLs(webView, false)
         setMixedContentMode(webView, "never")
 
@@ -150,7 +151,7 @@ class RNCWebViewManagerImpl {
                         return Bitmap.createBitmap(50, 50, Bitmap.Config.ARGB_8888)
                     }
 
-                    override fun onShowCustomView(view: View, callback: CustomViewCallback) {
+                    override fun onShowCustomView(view: View, callback: IX5WebChromeClient.CustomViewCallback) {
                         if (mVideoView != null) {
                             callback.onCustomViewHidden()
                             return
@@ -346,16 +347,16 @@ class RNCWebViewManagerImpl {
 
     fun setMixedContentMode(view: WebView, mixedContentMode: String?) {
         if (mixedContentMode == null || "never" == mixedContentMode) {
-            view.settings.mixedContentMode = WebSettings.MIXED_CONTENT_NEVER_ALLOW
+            view.settings.mixedContentMode = 1
         } else if ("always" == mixedContentMode) {
-            view.settings.mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
+            view.settings.mixedContentMode = 0
         } else if ("compatibility" == mixedContentMode) {
-            view.settings.mixedContentMode = WebSettings.MIXED_CONTENT_COMPATIBILITY_MODE
+            view.settings.mixedContentMode = 2
         }
     }
 
     fun setAllowUniversalAccessFromFileURLs(view: WebView, allow: Boolean) {
-        view.settings.allowUniversalAccessFromFileURLs = allow
+//        view.settings.allowUniversalAccessFromFileURLs = allow
     }
 
     private fun getDownloadingMessageOrDefault(): String? {
@@ -372,17 +373,20 @@ class RNCWebViewManagerImpl {
             if (source.hasKey("html")) {
                 val html = source.getString("html")
                 val baseUrl = if (source.hasKey("baseUrl")) source.getString("baseUrl") else ""
+                view.baseUrl = baseUrl;
                 view.loadDataWithBaseURL(
-                    baseUrl,
-                    html!!,
-                    HTML_MIME_TYPE,
-                    HTML_ENCODING,
-                    null
+                      baseUrl,
+                      html!!,
+                      HTML_MIME_TYPE,
+                      HTML_ENCODING,
+                      null
                 )
                 return
             }
             if (source.hasKey("uri")) {
                 val url = source.getString("uri")
+                val baseUrl = if (source.hasKey("baseUrl")) source.getString("baseUrl") else ""
+                view.baseUrl = baseUrl
                 val previousUrl = view.url
                 if (previousUrl != null && previousUrl == url) {
                     return
@@ -517,7 +521,7 @@ class RNCWebViewManagerImpl {
     }
 
     fun setAllowFileAccessFromFileURLs(view: RNCWebView, value: Boolean) {
-        view.settings.allowFileAccessFromFileURLs = value;
+//        view.settings.allowFileAccessFromFileURLs = value;
     }
 
     fun setAllowsFullscreenVideo(view: RNCWebView, value: Boolean) {
@@ -558,19 +562,19 @@ class RNCWebViewManagerImpl {
             if (WebViewFeature.isFeatureSupported(WebViewFeature.FORCE_DARK)) {
                 val forceDarkMode =
                     if (enabled) WebSettingsCompat.FORCE_DARK_ON else WebSettingsCompat.FORCE_DARK_OFF
-                WebSettingsCompat.setForceDark(view.settings, forceDarkMode)
+//                WebSettingsCompat.setForceDark(view.settings, forceDarkMode)
             }
 
             // Set how WebView content should be darkened.
             // PREFER_WEB_THEME_OVER_USER_AGENT_DARKENING:  checks for the "color-scheme" <meta> tag.
             // If present, it uses media queries. If absent, it applies user-agent (automatic)
             // More information about Force Dark Strategy can be found here:
-            // https://developer.android.com/reference/androidx/webkit/WebSettingsCompat#setForceDarkStrategy(android.webkit.WebSettings)
+            // https://developer.android.com/reference/androidx/webkit/WebSettingsCompat#setForceDarkStrategy(com.tencent.smtt.sdk.WebSettings)
             if (enabled && WebViewFeature.isFeatureSupported(WebViewFeature.FORCE_DARK_STRATEGY)) {
-                WebSettingsCompat.setForceDarkStrategy(
-                    view.settings,
-                    WebSettingsCompat.DARK_STRATEGY_PREFER_WEB_THEME_OVER_USER_AGENT_DARKENING
-                )
+//                WebSettingsCompat.setForceDarkStrategy(
+//                    view.settings,
+//                    WebSettingsCompat.DARK_STRATEGY_PREFER_WEB_THEME_OVER_USER_AGENT_DARKENING
+//                )
             }
         }
     }
@@ -629,6 +633,14 @@ class RNCWebViewManagerImpl {
     fun setSetDisplayZoomControls(view: RNCWebView, value: Boolean) {
         view.settings.displayZoomControls = value
 
+    }
+
+    fun setFocusable(view: RNCWebView, value: Integer) {
+      view.setInitialScale(value.toInt());
+    }
+
+    fun setFocusable(view: RNCWebView, value: Boolean) {
+      view.setFocusable(value);
     }
 
     fun setSetSupportMultipleWindows(view: RNCWebView, value: Boolean) {

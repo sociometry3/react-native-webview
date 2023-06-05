@@ -132,6 +132,11 @@ public class RNCWebViewManager extends SimpleViewManager<RNCWebView> {
         mRNCWebViewManagerImpl.setIncognito(view, value);
     }
 
+    @ReactProp(name = "initialScale")
+    public void setInitialScale(RNCWebView view, Integer value) {
+      mRNCWebViewManagerImpl.setFocusable(view, value);
+    }
+
     @ReactProp(name = "injectedJavaScript")
     public void setInjectedJavaScript(RNCWebView view, @Nullable String value) {
         mRNCWebViewManagerImpl.setInjectedJavaScript(view, value);

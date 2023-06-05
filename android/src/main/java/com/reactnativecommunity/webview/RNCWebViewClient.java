@@ -2,17 +2,17 @@ package com.reactnativecommunity.webview;
 
 import android.annotation.TargetApi;
 import android.graphics.Bitmap;
-import android.net.http.SslError;
 import android.os.Build;
 import android.os.SystemClock;
 import android.util.Log;
-import android.webkit.HttpAuthHandler;
-import android.webkit.RenderProcessGoneDetail;
-import android.webkit.SslErrorHandler;
-import android.webkit.WebResourceRequest;
-import android.webkit.WebResourceResponse;
-import android.webkit.WebView;
-import android.webkit.WebViewClient;
+import com.tencent.smtt.export.external.interfaces.HttpAuthHandler;
+
+import com.tencent.smtt.export.external.interfaces.SslError;
+import com.tencent.smtt.export.external.interfaces.SslErrorHandler;
+import com.tencent.smtt.export.external.interfaces.WebResourceRequest;
+import com.tencent.smtt.export.external.interfaces.WebResourceResponse;
+import com.tencent.smtt.sdk.WebView;
+import com.tencent.smtt.sdk.WebViewClient;
 
 import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
@@ -32,6 +32,13 @@ import com.reactnativecommunity.webview.events.TopLoadingStartEvent;
 import com.reactnativecommunity.webview.events.TopRenderProcessGoneEvent;
 import com.reactnativecommunity.webview.events.TopShouldStartLoadWithRequestEvent;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.URL;
+import java.net.URLConnection;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class RNCWebViewClient extends WebViewClient {
@@ -50,6 +57,74 @@ public class RNCWebViewClient extends WebViewClient {
     public void setBasicAuthCredential(@Nullable RNCBasicAuthCredential credential) {
         basicAuthCredential = credential;
     }
+
+
+  private WebResourceResponse proxyResource(String key, WebView view, WebResourceRequest request) {
+    InputStream inputStream = null;
+
+    String url = request.getUrl().toString();
+
+    if (url.contains(key)) {
+      String path = "data/data/com.wyntv/" + url.replace(key, "");
+      try {
+        String[] tmp = path.split("/");
+        File file = new File(path.trim());
+        String dirPath = "/";
+        for (int i = 0; i < tmp.length -1; i++) {
+          dirPath = dirPath + tmp[i] + "/";
+        }
+        File dir = new File(dirPath);
+        if (file.exists()){
+          inputStream = new FileInputStream(file);
+        } else {
+          dir.mkdirs();
+          file.createNewFile();
+          URL url1 = new URL(url);
+          URLConnection connection = url1.openConnection();
+          connection.connect();
+          inputStream = connection.getInputStream();
+          OutputStream outputStream = new FileOutputStream(file);
+          byte[] buffer = new byte[8 * 1024];
+          int read;
+          while ((read = inputStream.read(buffer)) != -1) {
+            outputStream.write(buffer, 0, read);
+          }
+          outputStream.flush();
+          inputStream = new FileInputStream(file);
+        }
+        WebResourceResponse response = null;
+        if (url.contains(".js")) {
+          response = new WebResourceResponse("text/javascript", "UTF-8", inputStream);
+        } else if (url.contains(".css")) {
+          response = new WebResourceResponse("text/css", "UTF-8", inputStream);
+        }
+
+        return response;
+      } catch (Exception e) {
+        e.printStackTrace();
+      } finally {
+      }
+    }
+    return null;
+  }
+
+  @Nullable
+  @Override
+  public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
+
+    String baseUrl = ((RNCWebView) view).baseUrl;
+
+    WebResourceResponse response;
+    response = this.proxyResource(baseUrl + "/api/PluginAssets", view, request);
+    if (response != null) {
+      return response;
+    }
+    response = this.proxyResource(baseUrl + "/api/themefiles", view, request);
+    if (response != null) {
+      return response;
+    }
+    return super.shouldInterceptRequest(view, request);
+  }
 
     @Override
     public void onPageFinished(WebView webView, String url) {
@@ -151,7 +226,7 @@ public class RNCWebViewClient extends WebViewClient {
 
     @Override
     public void onReceivedSslError(final WebView webView, final SslErrorHandler handler, final SslError error) {
-        // onReceivedSslError is called for most requests, per Android docs: https://developer.android.com/reference/android/webkit/WebViewClient#onReceivedSslError(android.webkit.WebView,%2520android.webkit.SslErrorHandler,%2520android.net.http.SslError)
+        // onReceivedSslError is called for most requests, per Android docs: https://developer.android.com/reference/android/webkit/WebViewClient#onReceivedSslError(com.tencent.smtt.sdk.WebView,%2520android.webkit.SslErrorHandler,%2520android.net.http.SslError)
         // WebView.getUrl() will return the top-level window URL.
         // If a top-level navigation triggers this error handler, the top-level URL will be the failing URL (not the URL of the currently-rendered page).
         // This is desired behavior. We later use these values to determine whether the request is a top-level navigation or a subresource request.
@@ -175,22 +250,22 @@ public class RNCWebViewClient extends WebViewClient {
 
         // https://developer.android.com/reference/android/net/http/SslError.html
         switch (code) {
-            case SslError.SSL_DATE_INVALID:
+            case android.net.http.SslError.SSL_DATE_INVALID:
                 description = "The date of the certificate is invalid";
                 break;
-            case SslError.SSL_EXPIRED:
+            case android.net.http.SslError.SSL_EXPIRED:
                 description = "The certificate has expired";
                 break;
-            case SslError.SSL_IDMISMATCH:
+            case android.net.http.SslError.SSL_IDMISMATCH:
                 description = "Hostname mismatch";
                 break;
-            case SslError.SSL_INVALID:
+            case android.net.http.SslError.SSL_INVALID:
                 description = "A generic error occurred";
                 break;
-            case SslError.SSL_NOTYETVALID:
+            case android.net.http.SslError.SSL_NOTYETVALID:
                 description = "The certificate is not yet valid";
                 break;
-            case SslError.SSL_UNTRUSTED:
+            case android.net.http.SslError.SSL_UNTRUSTED:
                 description = "The certificate authority is not trusted";
                 break;
             default:

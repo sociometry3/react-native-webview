@@ -1,6 +1,6 @@
 package com.reactnativecommunity.webview;
 
-// import android.webkit.WebView;
+// import com.tencent.smtt.sdk.WebView;
 import com.tencent.smtt.sdk.WebView;
 
 /**

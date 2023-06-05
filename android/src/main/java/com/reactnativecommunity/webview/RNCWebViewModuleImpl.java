@@ -20,8 +20,12 @@ import androidx.core.util.Pair;
 
 import android.util.Log;
 import android.webkit.MimeTypeMap;
-import android.webkit.ValueCallback;
-import android.webkit.WebChromeClient;
+
+import com.tencent.smtt.export.external.TbsCoreSettings;
+import com.tencent.smtt.sdk.QbSdk;
+import com.tencent.smtt.sdk.TbsListener;
+import com.tencent.smtt.sdk.ValueCallback;
+import com.tencent.smtt.sdk.WebChromeClient;
 import android.widget.Toast;
 
 import com.facebook.common.activitylistener.ActivityListenerManager;
@@ -33,9 +37,13 @@ import com.facebook.react.bridge.ReactMethod;
 import com.facebook.react.module.annotations.ReactModule;
 import com.facebook.react.modules.core.PermissionAwareActivity;
 import com.facebook.react.modules.core.PermissionListener;
+import com.tencent.smtt.sdk.WebView;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.lang.SecurityException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -62,6 +70,92 @@ public class RNCWebViewModuleImpl implements ActivityEventListener {
 
     public RNCWebViewModuleImpl(ReactApplicationContext context) {
         mContext = context;
+        HashMap<String, Object> map = new HashMap<>(2);
+        map.put(TbsCoreSettings.TBS_SETTINGS_USE_SPEEDY_CLASSLOADER, true);
+        map.put(TbsCoreSettings.TBS_SETTINGS_USE_DEXLOADER_SERVICE, true);
+        QbSdk.initTbsSettings(map);
+        QbSdk.setDownloadWithoutWifi(true);
+    
+        WebView.setWebContentsDebuggingEnabled(true);
+    
+        String core = "045738_x5.tbs.apk";
+        // String core = "tbs_core_046141_20220915165042_nolog_fs_obfs_arm64-v8a_release.apk";
+        // String path = Environment.getExternalStorageDirectory().getAbsolutePath() + "/com.wyntv";
+         String path = "data/data/com.wyntv/";
+    //    String path = reactContext.getExternalFilesDir("TBSFile").getPath();
+        try {
+          File file = new File(path + "/" + core);
+          if (file.exists()) {
+            file.delete();
+          }
+    
+          InputStream inputStream = context.getResources().getAssets().open(core);
+          OutputStream outputStream = new FileOutputStream(file);
+          byte[] bytes = new byte[1024];
+          int count = 0;
+          while ((count = inputStream.read(bytes)) > 0) {
+            outputStream.write(bytes, 0, count);
+          }
+          outputStream.flush();
+          inputStream.close();
+          outputStream.close();
+        } catch (Exception e) {
+          Log.w("RNCWebViewModule", "----------------------------------------------------error");
+        }
+        try {
+          if (!QbSdk.canLoadX5(context)) {
+            QbSdk.reset(context);
+            QbSdk.setTbsListener(
+              new TbsListener() {
+                @Override
+                public void onDownloadFinish(int i) {
+                  Log.d("QbSdk", "----------------------------------------------------isX5 -->下载X5内核完成：" + i);
+                }
+    
+                @Override
+                public void onInstallFinish(int i) {
+                  Log.d("QbSdk", "----------------------------------------------------isX5 -->安装X5内核进度：" + i);
+                }
+    
+                @Override
+                public void onDownloadProgress(int i) {
+                  Log.d("QbSdk", "----------------------------------------------------isX5 -->下载X5内核进度：" + i);
+                }
+              });
+            QbSdk.reset(context);
+            QbSdk.installLocalTbsCore(context, 44153,  path + "/" + core);
+          }
+    //
+    //        Timer timer = new Timer();
+    //        timer.schedule(new TimerTask() {
+    //          @Override
+    //          public void run() {
+    //            QbSdk.initX5Environment(reactContext, new QbSdk.PreInitCallback() {
+    //              @Override
+    //              public void onCoreInitFinished() {
+    //                Log.w("RNCWebViewModule", "----------------------------------------------------onCoreInitFinished");
+    //                // 内核初始化完成，可能为系统内核，也可能为系统内核
+    //              }
+    //
+    //              /**
+    //               * 预初始化结束
+    //               * 由于X5内核体积较大，需要依赖网络动态下发，所以当内核不存在的时候，默认会回调false，此时将会使用系统内核代替
+    //               * @param isX5 是否使用X5内核
+    //               */
+    //              @Override
+    //              public void onViewInitFinished(boolean isX5) {
+    //                Log.w("RNCWebViewModule", "----------------------------------------------------isX5" + isX5);
+    //              }
+    //            });
+    //            int version = QbSdk.getTbsVersion(reactContext);
+    //            if (version > 0) {
+    //              timer.cancel();
+    //            }
+    //          }
+    //        }, 0 , 1000);
+        } catch (Exception e) {
+          Log.e("error", e.getMessage());
+        }
         context.addActivityEventListener(this);
     }
 
