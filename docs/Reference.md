@@ -36,7 +36,6 @@ This document lays out the current public properties and methods for the React N
 - [`domStorageEnabled`](Reference.md#domstorageenabled)
 - [`javaScriptEnabled`](Reference.md#javascriptenabled)
 - [`javaScriptCanOpenWindowsAutomatically`](Reference.md#javascriptcanopenwindowsautomatically)
-- [`androidHardwareAccelerationDisabled`](Reference.md#androidHardwareAccelerationDisabled)
 - [`androidLayerType`](Reference.md#androidLayerType)
 - [`mixedContentMode`](Reference.md#mixedcontentmode)
 - [`thirdPartyCookiesEnabled`](Reference.md#thirdpartycookiesenabled)
@@ -60,8 +59,6 @@ This document lays out the current public properties and methods for the React N
 - [`allowFileAccessFromFileURLs`](Reference.md#allowFileAccessFromFileURLs)
 - [`allowUniversalAccessFromFileURLs`](Reference.md#allowUniversalAccessFromFileURLs)
 - [`allowingReadAccessToURL`](Reference.md#allowingReadAccessToURL)
-- [`url`](Reference.md#url)
-- [`html`](Reference.md#html)
 - [`keyboardDisplayRequiresUserAction`](Reference.md#keyboardDisplayRequiresUserAction)
 - [`hideKeyboardAccessoryView`](Reference.md#hidekeyboardaccessoryview)
 - [`allowsBackForwardNavigationGestures`](Reference.md#allowsbackforwardnavigationgestures)
@@ -89,6 +86,7 @@ This document lays out the current public properties and methods for the React N
 - [`minimumFontSize`](Reference.md#minimumFontSize)
 - [`downloadingMessage`](Reference.md#downloadingMessage)
 - [`lackPermissionToDownloadMessage`](Reference.md#lackPermissionToDownloadMessage)
+- [`allowsProtectedMedia`](Reference.md#allowsProtectedMedia)
 
 ## Methods Index
 
@@ -98,7 +96,7 @@ This document lays out the current public properties and methods for the React N
 - [`stopLoading`](Reference.md#stoploading)
 - [`injectJavaScript`](Reference.md#injectjavascriptstr)
 - [`clearFormData`](Reference.md#clearFormData)
-- [`clearCache`](Reference.md#clearCache)
+- [`clearCache`](Reference.md#clearCachebool)
 - [`clearHistory`](Reference.md#clearHistory)
 - [`requestFocus`](Reference.md#requestFocus)
 - [`postMessage`](Reference.md#postmessagestr)
@@ -198,9 +196,12 @@ Make sure the string evaluates to a valid type (`true` works) and doesn't otherw
 
 On iOS, see [`WKUserScriptInjectionTimeAtDocumentStart`](https://developer.apple.com/documentation/webkit/wkuserscriptinjectiontime/wkuserscriptinjectiontimeatdocumentstart?language=objc)
 
-| Type   | Required | Platform   |
-| ------ | -------- | ---------- |
-| string | No       | iOS, macOS |
+> **Warning**
+> On Android, this may work, but it is not 100% reliable (see [#1609](https://github.com/react-native-webview/react-native-webview/issues/1609) and [#1099](https://github.com/react-native-webview/react-native-webview/pull/1099)).
+
+| Type   | Required | Platform                           |
+| ------ | -------- | ---------------------------------- |
+| string | No       | iOS, macOS, Android (experimental) |
 
 To learn more, read the [Communicating between JS and Native](Guide.md#communicating-between-js-and-native) guide.
 
@@ -577,13 +578,13 @@ url
 
 ### `onContentProcessDidTerminate`[⬆](#props-index)<!-- Link generated with jump2header -->
 
-Function that is invoked when the `WebView` content process is terminated. 
+Function that is invoked when the `WebView` content process is terminated.
 
 | Type     | Required | Platform                |
 | -------- | -------- | ----------------------- |
 | function | No       | iOS and macOS WKWebView |
 
-iOS Web views use a separate process to render and manage web content. WebKit calls this method when the process for the specified web view terminates for any reason. 
+iOS Web views use a separate process to render and manage web content. WebKit calls this method when the process for the specified web view terminates for any reason.
 The reason is not necessarily a crash. For instance, since iOS WebViews are not included in the total RAM of the app, they can be terminated independently of the app to liberate memory for new apps the user is opening. It's not unexpected to have WebViews get terminated after a while in the background.
 
 Example:
@@ -846,16 +847,6 @@ A Boolean value indicating whether JavaScript can open windows without user inte
 
 ---
 
-### `androidHardwareAccelerationDisabled`[⬆](#props-index)<!-- Link generated with jump2header -->
-
-**Deprecated.** Use the `androidLayerType` prop instead.
-
-| Type | Required | Platform |
-| ---- | -------- | -------- |
-| bool | No       | Android  |
-
----
-
 ### `androidLayerType`[⬆](#props-index)<!-- Link generated with jump2header -->
 
 Specifies the layer type.
@@ -866,7 +857,6 @@ Possible values for `androidLayerType` are:
 - `software` - The view has a software layer. A software layer is backed by a bitmap and causes the view to be rendered using Android's software rendering pipeline, even if hardware acceleration is enabled.
 - `hardware` - The view has a hardware layer. A hardware layer is backed by a hardware specific texture and causes the view to be rendered using Android's hardware rendering pipeline, but only if hardware acceleration is turned on for the view hierarchy.
 
-Avoid setting both `androidLayerType` and `androidHardwareAccelerationDisabled` props at the same time, as this may cause undefined behaviour.
 
 | Type   | Required | Platform |
 | ------ | -------- | -------- |
@@ -1068,7 +1058,7 @@ Boolean value that determines whether scrolling is enabled in the `WebView`. The
 
 ### `nestedScrollEnabled`[⬆](#props-index)
 
-Boolean value that determines whether scrolling is possible in the `WebView` when used inside a `ScrollView` on Android. The default value is `false`. 
+Boolean value that determines whether scrolling is possible in the `WebView` when used inside a `ScrollView` on Android. The default value is `false`.
 
 Setting this to `true` will prevent the `ScrollView` to scroll when scrolling from inside the `WebView`.
 
@@ -1090,7 +1080,7 @@ Sets whether the WebView should use its built-in zoom mechanisms. The default va
 
 ### `setDisplayZoomControls`[⬆](#props-index)<!-- Link generated with jump2header -->
 
-Sets whether the WebView should display on-screen zoom controls when using the built-in zoom mechanisms (see `setBuiltInZoomControls`). The default value is `false`. 
+Sets whether the WebView should display on-screen zoom controls when using the built-in zoom mechanisms (see `setBuiltInZoomControls`). The default value is `false`.
 
 | Type | Required | Platform      |
 | ---- | -------- | ------------- |
@@ -1166,26 +1156,6 @@ A String value that indicates which URLs the WebView's file can then reference i
 | Type   | Required | Platform      |
 | ------ | -------- | ------------- |
 | string | No       | iOS and macOS |
-
----
-
-### `url`[⬆](#props-index)<!-- Link generated with jump2header -->
-
-**Deprecated.** Use the `source` prop instead.
-
-| Type   | Required |
-| ------ | -------- |
-| string | No       |
-
----
-
-### `html`[⬆](#props-index)<!-- Link generated with jump2header -->
-
-**Deprecated.** Use the `source` prop instead.
-
-| Type   | Required |
-| ------ | -------- |
-| string | No       |
 
 ---
 
@@ -1508,6 +1478,10 @@ Example:
 
 An array of custom menu item objects that will be appended to the UIMenu that appears when selecting text (will appear after 'Copy' and 'Share...').  Used in tandem with `onCustomMenuSelection`
 
+| Type                                                               | Required | Platform |
+| ------------------------------------------------------------------ | -------- | -------- |
+| array of objects: {label: string, key: string}                     | No       | iOS      |
+
 Example:
 
 ```javascript
@@ -1518,8 +1492,12 @@ Example:
 
 Function called when a custom menu item is selected.  It receives a Native event, which includes three custom keys: `label`, `key` and `selectedText`.
 
+| Type                                                               | Required | Platform |
+| ------------------------------------------------------------------ | -------- | -------- |
+| function                                                           | No       | iOS      |
+
 ```javascript
-<WebView 
+<WebView
   menuItems={[{ label: 'Tweet', key: 'tweet' }, { label: 'Save for later', key: 'saveForLater' }]}
   onCustomMenuSelection={(webViewEvent) => {
     const { label } = webViewEvent.nativeEvent; // The name of the menu item, i.e. 'Tweet'
@@ -1583,6 +1561,15 @@ This is the message that is shown in the Toast when the webview is unable to dow
 | Type   | Required | Platform |
 | ------ | -------- | -------- |
 | string | No       | Android  |
+
+### `allowsProtectedMedia`
+
+Whether or not the Webview can play media protected by DRM. Default is false.
+/!\ Setting this to false won't revoke the permission already granted to the current webpage. In order to do so, you'd have to reload the page as well. /!\
+
+| Type    | Required | Platform |
+| ------- | -------- | -------- |
+| boolean | No       | Android  |
 
 ## Methods
 
